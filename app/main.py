@@ -9,3 +9,4 @@ def root():
     return {"message": "DeBil backend is running!"}
 
 app.include_router(chat_router)
+app.include_router(chat_router, prefix="/v1/study")
