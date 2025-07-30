@@ -1,6 +1,4 @@
-# deb-back
-
-# 📦 Backend & Android 실행 가이드
+# Backend & Android 실행 가이드
 
 이 프로젝트는 백엔드 서버와 Android 앱이 함께 작동합니다.  
 **AI 채팅 기능을 사용하려면 반드시 백엔드를 먼저 실행한 후, Android 앱을 실행해야 합니다.**
