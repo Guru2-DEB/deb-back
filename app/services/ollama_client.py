@@ -26,7 +26,7 @@ def call_ollama(prompt: str):
         "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
-    response = requests.post(url, json=payload, timeout=120)
+    response = requests.post(url, json=payload, timeout=180)
     response.raise_for_status()
     return response.json()["message"]["content"]
 
