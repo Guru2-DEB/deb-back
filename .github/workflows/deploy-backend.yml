@@ -1,0 +1,41 @@
+name: 🐳 Deploy Backend to Cloud Run
+
+on:
+  push:
+    paths:
+      - 'deb-back/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Google Cloud 인증 설정 (repo secret: GCP_SA_KEY)
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      # 프로젝트, 리전 등 환경변수
+      - run: |
+          echo "PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
+          echo "REGION=asia-northeast3"           >> $GITHUB_ENV
+          echo "SERVICE_NAME=deb-backend"         >> $GITHUB_ENV
+
+      # 빌드 & 업로드 (Cloud Build 사용)
+      - name: Build & Submit
+        uses: google-github-actions/cloud-build@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          config: deb-back/cloudbuild.yaml
+
+      # Cloud Run 서비스 배포
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service: ${{ env.SERVICE_NAME }}
+          image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          allow-unauthenticated: true
