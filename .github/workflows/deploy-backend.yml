@@ -1,6 +1,6 @@
 name: 🐳 Deploy Backend to Cloud Run
 
-# 이제 v*.*.* 형태의 Git 태그를 푸시할 때만 실행됩니다.
+# Git 태그(v*.*.*) 푸시 혹은 수동 실행 모두 허용
 on:
   push:
     tags:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      # 1) 소스 체크아웃
+      # 1) 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -29,14 +29,14 @@ jobs:
           echo "REGION=asia-northeast3"           >> $GITHUB_ENV
           echo "SERVICE_NAME=deb-backend"         >> $GITHUB_ENV
 
-      # 4) Cloud Build 실행
-      - name: Build & Submit with Cloud Build
-        uses: google-github-actions/cloud-build@v2
+      # 4) Cloud Build 실행 (BACKEND/cloudbuild.yaml 경로 주의)
+      - name: Build & Submit
+        uses: google-github-actions/cloud-build@v0
         with:
           project_id: ${{ env.PROJECT_ID }}
           config: BACKEND/cloudbuild.yaml
 
-      # 5) Cloud Run에 새 리비전 배포
+      # 5) Cloud Run 배포
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v1
         with:
