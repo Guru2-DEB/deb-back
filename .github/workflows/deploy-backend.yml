@@ -30,13 +30,12 @@ jobs:
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
 
-      # 4) Cloud Build (backend/cloudbuild.yaml) 로 이미지 빌드 & 푸시
+      # 4) Cloud Build 로 이미지 빌드 & 푸시
       - name: Build & Push image with Cloud Build
-        working-directory: backend           # ← 여기서 backend 폴더로 이동!
+        working-directory: backend
         run: |
           gcloud builds submit \
             --config=cloudbuild.yaml \
-            --substitutions=_SERVICE_NAME=deb-backend \
             .
 
       # 5) Cloud Run에 배포
