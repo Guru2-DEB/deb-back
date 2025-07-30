@@ -1,0 +1,48 @@
+name: 🐳 Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      # 1) 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2) GCP 인증 (service account JSON을 GitHub Secret에 GCP_SA_KEY로 등록)
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # 3) gcloud CLI 설치 및 인증
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      # 4) Cloud Build로 도커 이미지 빌드 & 푸시
+      - name: Build & Push image with Cloud Build
+        run: |
+          gcloud builds submit \
+            --config=cloudbuild.yaml \
+            --substitutions=_SERVICE_NAME=deb-backend \
+            .
+
+      # 5) Cloud Run에 배포
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service: deb-backend
+          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/deb-backend
+          region: ${{ secrets.GCP_REGION }}
+          allow-unauthenticated: true
