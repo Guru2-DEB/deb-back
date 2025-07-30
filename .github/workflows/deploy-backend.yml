@@ -1,47 +1,48 @@
 name: 🐳 Deploy Backend to Cloud Run
 
-# Git 태그(v*.*.*) 푸시 혹은 수동 실행 모두 허용
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
+    environment: production
 
+    steps:
       # 1) 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2) GCP 인증 (GCP_SA_KEY는 GitHub Secrets에 등록)
+      # 2) GCP 인증 (service account JSON을 GitHub Secret에 GCP_SA_KEY로 등록)
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # 3) 환경변수 세팅
-      - name: Set environment variables
-        run: |
-          echo "PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "REGION=asia-northeast3"           >> $GITHUB_ENV
-          echo "SERVICE_NAME=deb-backend"         >> $GITHUB_ENV
-
-      # 4) Cloud Build 실행 (BACKEND/cloudbuild.yaml 경로 주의)
-      - name: Build & Submit
-        uses: google-github-actions/cloud-build@v0
+      # 3) gcloud CLI 설치 및 인증
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          config: BACKEND/cloudbuild.yaml
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
 
-      # 5) Cloud Run 배포
+      # 4) Cloud Build로 도커 이미지 빌드 & 푸시
+      - name: Build & Push image with Cloud Build
+        run: |
+          gcloud builds submit \
+            --config=cloudbuild.yaml \
+            --substitutions=_SERVICE_NAME=deb-backend \
+            .
+
+      # 5) Cloud Run에 배포
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v1
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          service: ${{ env.SERVICE_NAME }}
-          image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}
-          region: ${{ env.REGION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service: deb-backend
+          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/deb-backend
+          region: ${{ secrets.GCP_REGION }}
           allow-unauthenticated: true
