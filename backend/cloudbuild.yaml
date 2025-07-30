@@ -1,5 +1,6 @@
+# backend/cloudbuild.yaml
 steps:
-  # 1) 도커 이미지 빌드
+  # 1) 컨테이너 이미지 빌드
   - name: 'gcr.io/cloud-builders/docker'
     args:
       [

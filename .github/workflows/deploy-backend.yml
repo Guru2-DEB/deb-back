@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2) GCP 인증 (service account JSON을 GitHub Secret에 GCP_SA_KEY로 등록)
+      # 2) GCP 인증
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
@@ -28,9 +28,11 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
 
-      # 4) Cloud Build로 도커 이미지 빌드 & 푸시
+      # 4) Cloud Build (backend/cloudbuild.yaml) 로 이미지 빌드 & 푸시
       - name: Build & Push image with Cloud Build
+        working-directory: backend           # ← 여기서 backend 폴더로 이동!
         run: |
           gcloud builds submit \
             --config=cloudbuild.yaml \
