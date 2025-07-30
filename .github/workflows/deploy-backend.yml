@@ -1,10 +1,10 @@
 name: 🐳 Deploy Backend to Cloud Run
 
-# → main 브랜치에 푸시될 때마다, 수동(trigger) 둘 다 허용
+# 이제 v*.*.* 형태의 Git 태그를 푸시할 때만 실행됩니다.
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 jobs:
@@ -12,28 +12,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      # 1) 코드를 체크아웃
-      - uses: actions/checkout@v3
+      # 1) 소스 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # 2) GCP 인증 (GCP_SA_KEY는 GitHub Secrets에 넣어두셔야 합니다)
-      - uses: google-github-actions/auth@v1
+      # 2) GCP 인증 (GCP_SA_KEY는 GitHub Secrets에 등록)
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
       # 3) 환경변수 세팅
-      - run: |
+      - name: Set environment variables
+        run: |
           echo "PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
           echo "REGION=asia-northeast3"           >> $GITHUB_ENV
           echo "SERVICE_NAME=deb-backend"         >> $GITHUB_ENV
 
-      # 4) Cloud Build 실행 (BACKEND 폴더 루트의 cloudbuild.yaml 참조)
-      - name: Build & Submit
-        uses: google-github-actions/cloud-build@v1
+      # 4) Cloud Build 실행
+      - name: Build & Submit with Cloud Build
+        uses: google-github-actions/cloud-build@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
           config: BACKEND/cloudbuild.yaml
 
-      # 5) Cloud Run 배포
+      # 5) Cloud Run에 새 리비전 배포
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v1
         with:
